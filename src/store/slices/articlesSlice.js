@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import CONFIG from '../../../config/env';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // Helper function to set auth header
 const getAuthHeader = () => {
@@ -18,7 +18,7 @@ export const fetchArticles = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const { page = 1, limit = 10, search = '', status = '' } = params;
-      let url = `${API_URL}/articles?page=${page}&limit=${limit}`;
+      let url = `${CONFIG.API_URL}/articles?page=${page}&limit=${limit}`;
       
       if (search) url += `&search=${search}`;
       if (status) url += `&status=${status}`;
@@ -35,7 +35,7 @@ export const fetchArticleById = createAsyncThunk(
   'articles/fetchArticleById',
   async (slug, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/articles/${slug}`);
+      const response = await axios.get(`${CONFIG.API_URL}/articles/${slug}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch article');
@@ -68,7 +68,7 @@ export const updateArticle = createAsyncThunk(
   async ({ slug, articleData }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `${API_URL}/articles/${slug}`, 
+        `${CONFIG.API_URL}/articles/${slug}`, 
         articleData, 
         getAuthHeader()
       );
@@ -87,7 +87,7 @@ export const deleteArticle = createAsyncThunk(
   'articles/deleteArticle',
   async (slug, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/articles/${slug}`, getAuthHeader());
+      await axios.delete(`${CONFIG.API_URL}/articles/${slug}`, getAuthHeader());
       return slug;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete article');
@@ -100,7 +100,7 @@ export const toggleArticleStatus = createAsyncThunk(
   async ({ slug, status }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `${API_URL}/articles/${slug}/status`, 
+        `${CONFIG.API_URL}/articles/${slug}/status`, 
         { status }, 
         getAuthHeader()
       );

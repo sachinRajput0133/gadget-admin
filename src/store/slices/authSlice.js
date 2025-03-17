@@ -1,15 +1,16 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import CONFIG from '../../../config/env';
 
-const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api` || 'http://localhost:5000/api';
 
 // Async thunks
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, { email, password });
+      console.log("loginnn")
+      const response = await axios.post(`${CONFIG.API_URL}/auth/login`, { email, password });
       Cookies.set('token', response.data.token, { expires: 7 });
       return response.data;
     } catch (error) {
@@ -25,7 +26,7 @@ export const checkAuth = createAsyncThunk(
       const token = Cookies.get('token');
       if (!token) return rejectWithValue('No token found');
       
-      const response = await axios.get(`${API_URL}/auth/me`, {
+      const response = await axios.get(`${CONFIG.API_URL}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       return response.data;

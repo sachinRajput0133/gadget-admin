@@ -1,8 +1,8 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import CONFIG from '../../../config/env';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 // Helper function to set auth header
 const getAuthHeader = () => {
@@ -18,7 +18,7 @@ export const fetchCategories = createAsyncThunk(
   async (params = {}, { rejectWithValue }) => {
     try {
       const { page = 1, limit = 10, search = '' } = params;
-      let url = `${API_URL}/categories?page=${page}&limit=${limit}`;
+      let url = `${CONFIG.API_URL}/categories?page=${page}&limit=${limit}`;
       
       if (search) url += `&search=${search}`;
       
@@ -34,7 +34,7 @@ export const fetchCategoryBySlug = createAsyncThunk(
   'categories/fetchCategoryBySlug',
   async (slug, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${API_URL}/categories/${slug}`);
+      const response = await axios.get(`${CONFIG.API_URL}/categories/${slug}`);
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch category');
@@ -47,7 +47,7 @@ export const createCategory = createAsyncThunk(
   async (categoryData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_URL}/categories`, 
+        `${CONFIG.API_URL}/categories`, 
         categoryData, 
         getAuthHeader()
       );
@@ -67,7 +67,7 @@ export const updateCategory = createAsyncThunk(
   async ({ slug, categoryData }, { rejectWithValue }) => {
     try {
       const response = await axios.put(
-        `${API_URL}/categories/${slug}`, 
+        `${CONFIG.API_URL}/categories/${slug}`, 
         categoryData, 
         getAuthHeader()
       );
@@ -86,7 +86,7 @@ export const deleteCategory = createAsyncThunk(
   'categories/deleteCategory',
   async (slug, { rejectWithValue }) => {
     try {
-      await axios.delete(`${API_URL}/categories/${slug}`, getAuthHeader());
+      await axios.delete(`${CONFIG.API_URL}/categories/${slug}`, getAuthHeader());
       return slug;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to delete category');

@@ -40,6 +40,11 @@ const RolesPage = () => {
   const [roleToDelete, setRoleToDelete] = useState(null);
 
   useEffect(() => {
+    // Reset the dialog state when the component mounts
+    setOpenDeleteDialog(false);
+    setRoleToDelete(null);
+    
+    // Fetch roles data
     dispatch(fetchRoles());
   }, [dispatch]);
 
@@ -65,13 +70,22 @@ const RolesPage = () => {
     router.push(`/roles/edit/${roleId}`);
   };
 
+ 
   const handleDeleteClick = (role) => {
-    setRoleToDelete(role);
-    setOpenDeleteDialog(true);
+    // Only set the role to delete and open the dialog if we have a valid role
+    if (role && role._id) {
+      setRoleToDelete(role);
+      setOpenDeleteDialog(true);
+    }
   };
 
   const handleDeleteConfirm = async () => {
     try {
+      if (!roleToDelete || !roleToDelete._id) {
+        setOpenDeleteDialog(false);
+        return;
+      }
+      
       await dispatch(deleteRole(roleToDelete._id)).unwrap();
       dispatch(setNotification({
         type: 'success',
@@ -220,9 +234,9 @@ const RolesPage = () => {
       </Box>
 
       <ConfirmDialog
-        open={openDeleteDialog}
+        open={Boolean(openDeleteDialog && roleToDelete)}
         title="Delete Role"
-        content={`Are you sure you want to delete the role "${roleToDelete?.name}"? This action cannot be undone.`}
+        content={roleToDelete ? `Are you sure you want to delete the role "${roleToDelete.name}"? This action cannot be undone.` : ''}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
       />

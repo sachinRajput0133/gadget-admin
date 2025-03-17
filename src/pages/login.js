@@ -45,6 +45,7 @@ const Login = () => {
   }, [error]);
 
   const onSubmit = async (data) => {
+    console.log("🚀 ~ onSubmit ~ data:", data)
     await dispatch(login(data));
   };
 
