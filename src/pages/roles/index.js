@@ -4,14 +4,6 @@ import {
   Box,
   Typography,
   Button,
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TablePagination,
   IconButton,
   Chip,
   TextField,
@@ -27,17 +19,19 @@ import { useRouter } from 'next/router';
 import Layout from '../../components/layout/Layout';
 import { fetchRoles, deleteRole } from '../../store/slices/roleSlice';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import useReactTable from '../../hooks/table/useTable';
 import { setNotification } from '../../store/slices/uiSlice';
+// import useReactTable from '../../hooks/table/useTable';
+import Table from '../../components/common/Table/Table';
 
 const RolesPage = () => {
   const dispatch = useDispatch();
   const router = useRouter();
   const { roles, loading, error } = useSelector((state) => state.roles);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const [roleToDelete, setRoleToDelete] = useState(null);
+  const [filteredRoles, setFilteredRoles] = useState([]);
 
   useEffect(() => {
     // Reset the dialog state when the component mounts
@@ -48,18 +42,19 @@ const RolesPage = () => {
     dispatch(fetchRoles());
   }, [dispatch]);
 
-  const handleChangePage = (event, newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  useEffect(() => {
+    // Filter roles when search term or roles data changes
+    if (roles) {
+      const filtered = roles.filter((role) =>
+        role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        role.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredRoles(filtered);
+    }
+  }, [roles, searchTerm]);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
-    setPage(0);
   };
 
   const handleCreateRole = () => {
@@ -70,7 +65,6 @@ const RolesPage = () => {
     router.push(`/roles/edit/${roleId}`);
   };
 
- 
   const handleDeleteClick = (role) => {
     // Only set the role to delete and open the dialog if we have a valid role
     if (role && role._id) {
@@ -106,17 +100,74 @@ const RolesPage = () => {
     setRoleToDelete(null);
   };
 
-  // Filter roles by search term
-  const filteredRoles = roles.filter((role) =>
-    role.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    role.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const columns = React.useMemo(() => [
+    {
+      Header: 'Name',
+      accessor: 'name',
+      Cell: ({ value }) => (
+        <Typography variant="body1" fontWeight="medium">
+          {value}
+        </Typography>
+      )
+    },
+    {
+      Header: 'Description',
+      accessor: 'description',
+    },
+    {
+      Header: 'Status',
+      accessor: 'isActive',
+      Cell: ({ value, row }) => (
+        <Box>
+          <Chip
+            label={value ? 'Active' : 'Inactive'}
+            color={value ? 'success' : 'error'}
+            size="small"
+          />
+          {row.original.isDefault && (
+            <Chip
+              label="Default"
+              color="primary"
+              size="small"
+              sx={{ ml: 1 }}
+            />
+          )}
+        </Box>
+      )
+    },
+    {
+      Header: 'Permissions',
+      accessor: 'permissions',
+      Cell: ({ value }) => `${value ? value.length : 0} permissions`
+    },
+    {
+      Header: 'Actions',
+      accessor: '_id',
+      Cell: ({ value, row }) => (
+        <Box>
+          <IconButton
+            color="primary"
+            onClick={() => handleEditRole(value)}
+            title="Edit role"
+            size="small"
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+          <IconButton
+            color="error"
+            onClick={() => handleDeleteClick(row.original)}
+            title="Delete role"
+            disabled={row.original.isDefault}
+            size="small"
+          >
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Box>
+      )
+    },
+  ], []);
 
-  // Paginate roles
-  const paginatedRoles = filteredRoles.slice(
-    page * rowsPerPage,
-    page * rowsPerPage + rowsPerPage
-  );
+  const tableInstance = useReactTable(columns, filteredRoles);
 
   return (
     <Layout title="Roles Management">
@@ -152,94 +203,20 @@ const RolesPage = () => {
           />
         </Box>
 
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Permissions</TableCell>
-                <TableCell>Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    Loading...
-                  </TableCell>
-                </TableRow>
-              ) : paginatedRoles.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} align="center">
-                    No roles found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedRoles.map((role) => (
-                  <TableRow key={role._id}>
-                    <TableCell>{role.name}</TableCell>
-                    <TableCell>{role.description}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={role.isActive ? 'Active' : 'Inactive'}
-                        color={role.isActive ? 'success' : 'error'}
-                        size="small"
-                      />
-                      {role.isDefault && (
-                        <Chip
-                          label="Default"
-                          color="primary"
-                          size="small"
-                          sx={{ ml: 1 }}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {role.permissions ? role.permissions.length : 0} permissions
-                    </TableCell>
-                    <TableCell>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleEditRole(role._id)}
-                        title="Edit role"
-                      >
-                        <EditIcon />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => handleDeleteClick(role)}
-                        title="Delete role"
-                        disabled={role.isDefault}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-          <TablePagination
-            rowsPerPageOptions={[5, 10, 25]}
-            component="div"
-            count={filteredRoles.length}
-            rowsPerPage={rowsPerPage}
-            page={page}
-            onPageChange={handleChangePage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-          />
-        </TableContainer>
+        <Table 
+          {...tableInstance}
+          loading={loading}
+          totalCount={filteredRoles.length} 
+        />
       </Box>
 
-      <ConfirmDialog
+      {/* <ConfirmDialog
         open={Boolean(openDeleteDialog && roleToDelete)}
         title="Delete Role"
         content={roleToDelete ? `Are you sure you want to delete the role "${roleToDelete.name}"? This action cannot be undone.` : ''}
         onConfirm={handleDeleteConfirm}
         onCancel={handleDeleteCancel}
-      />
+      /> */}
     </Layout>
   );
 };

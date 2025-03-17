@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useDispatch, useSelector } from 'react-redux';
 import { Box, Typography, CircularProgress } from '@mui/material';
-import Layout from '../../../components/Layout';
+import Layout from '../../../components/layout/Layout';
 import RoleForm from '../../../components/roles/RoleForm';
 import { fetchRole, clearSelectedRole } from '../../../store/slices/roleSlice';
 import { setNotification } from '../../../store/slices/uiSlice';
