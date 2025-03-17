@@ -1,31 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { fetchSections, deleteSection } from '../../store/slices/sectionsSlice';
 import { toast } from 'react-toastify';
+import Layout from '../../components/layout/Layout';
 
 // Icons
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
 import SearchIcon from '@mui/icons-material/Search';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 
 // Components
-import Pagination from '../../components/common/Pagination';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
 import CustomLink from '../../widget/customLink';
+import useReactTable from '../../hooks/table/useTable';
+import useSectionsTable from '../../hooks/table/useSectionsTable';
+import Table from '../../components/common/Table/Table';
+import { Box, Typography, TextField, InputAdornment, Button } from '@mui/material';
 
 const Sections = () => {
   const dispatch = useDispatch();
   const router = useRouter();
-  const { sections, pagination, loading, error } = useSelector((state) => state.sections);
+  const { sections = [], loading, error } = useSelector((state) => state.sections);
+  console.log("🚀 ~ Sections ~ sections:", sections)
   
   // Local state
   const [searchTerm, setSearchTerm] = useState('');
-  const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, slug: null });
   
   // Get query params
   const { page = 1, limit = 10, search = '' } = router.query;
@@ -42,7 +42,12 @@ const Sections = () => {
     }
   }, [error]);
 
-  // Handle search
+  // Memoize filtered sections to prevent unnecessary re-renders
+  const filteredSections = useMemo(() => {
+    // Ensure we always have an array, even if sections is undefined
+    return Array.isArray(sections) ? sections : [];
+  }, [sections]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     
@@ -60,174 +65,124 @@ const Sections = () => {
     });
   };
 
-  // Handle delete
+  const handleEditSection = (slug) => {
+    if (!slug) return;
+    router.push(`/sections/edit/${slug}`);
+  };
+
+  const handleDeleteClick = (slug) => {
+    if (!slug) return;
+    setConfirmDelete({ open: true, slug });
+  };
+
   const handleDelete = async () => {
-    if (!confirmDelete.id) return;
+    if (!confirmDelete.slug) return;
     
     try {
-      await dispatch(deleteSection(confirmDelete.id)).unwrap();
+      await dispatch(deleteSection(confirmDelete.slug)).unwrap();
       toast.success('Section deleted successfully');
-      setConfirmDelete({ open: false, id: null });
+      setConfirmDelete({ open: false, slug: null });
     } catch (error) {
       toast.error(error);
-      setConfirmDelete({ open: false, id: null });
+      setConfirmDelete({ open: false, slug: null });
     }
   };
 
-  // Handle page change
-  const handlePageChange = (newPage) => {
-    router.push({
-      pathname: router.pathname,
-      query: { ...router.query, page: newPage }
-    });
+  const handleCancelDelete = () => {
+    setConfirmDelete({ open: false, slug: null });
   };
 
+  // Memoize callbacks for table actions to prevent re-renders
+  const handleEditMemoized = useMemo(() => handleEditSection, []);
+  const handleDeleteMemoized = useMemo(() => handleDeleteClick, []);
+
+
+  const { columns } = useSectionsTable({
+    onEdit: handleEditMemoized || (() => {}),
+    onDelete: handleDeleteMemoized || (() => {})
+  });
+
+  const { tableInstance } = useReactTable(columns, filteredSections ?? []);
+  console.log("🚀 ~ Sections ~ tableInstance:", tableInstance)
+
+  // Only render the table if we have all the required properties
+  const canRenderTable = useMemo(() => {
+    return tableInstance && 
+           tableInstance.getTableProps && 
+           tableInstance.getTableBodyProps && 
+           tableInstance.headerGroups && 
+           Array.isArray(tableInstance.page);
+  }, [tableInstance]);
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-        <h1 className="text-2xl font-bold text-gray-800">Sections</h1>
-        <CustomLink href="/sections/create">
-          <span className="btn-primary inline-flex items-center">
+    <Layout title="Sections Management">
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h4" component="h1">
+            Sections
+          </Typography>
+          <CustomLink href="/sections/create">
             <AddIcon className="mr-1 h-5 w-5" />
             Create Section
-          </span>
-        </CustomLink>
-      </div>
+          </CustomLink>
+        </Box>
 
-      {/* Search */}
-      <div className="bg-white p-4 rounded-lg shadow-sm space-y-4">
-        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-          <div className="relative flex-grow">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <SearchIcon className="h-5 w-5 text-gray-400" />
+        <Box sx={{ mb: 3 }}>
+          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+            <div className="relative flex-grow">
+              <TextField
+                fullWidth
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search sections..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </div>
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search sections..."
-              className="form-input pl-10 w-full"
-            />
-          </div>
-          <button type="submit" className="btn-secondary">
-            Search
-          </button>
-        </form>
-      </div>
+            <Button type="submit" variant="contained" color="primary">
+              Search
+            </Button>
+          </form>
+        </Box>
 
-      {/* Sections Table */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Title
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Order
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Articles
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {loading ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center">
-                    <div className="flex justify-center">
-                      <div className="loader"></div>
-                    </div>
-                  </td>
-                </tr>
-              ) : sections?.length > 0 ? (
-                sections.map((section) => (
-                  <tr key={section._id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
-                        {section.title}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {section.order}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        section.isActive 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {section.isActive ? 'Active' : 'Inactive'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {section.articles?.length || 0}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <CustomLink href={`/sections/edit/${section._id}`}>
-                          <span
-                            className="icon-button text-blue-600 hover:text-blue-900"
-                            title="Edit"
-                          >
-                            <EditIcon className="h-5 w-5" />
-                          </span>
-                        </CustomLink>
-                        <button
-                          onClick={() => setConfirmDelete({ open: true, id: section._id })}
-                          className="icon-button text-red-600 hover:text-red-900"
-                          title="Delete"
-                        >
-                          <DeleteIcon className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No sections found
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Pagination */}
-        {pagination && pagination.totalPages > 1 && (
-          <div className="px-6 py-4 border-t border-gray-200">
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={handlePageChange}
-            />
-          </div>
+        {loading ? (
+          <Box display="flex" justifyContent="center" my={4}>
+            <Typography>Loading sections...</Typography>
+          </Box>
+        ) : !canRenderTable ? (
+          <Box display="flex" justifyContent="center" my={4}>
+            <Typography>No sections available</Typography>
+          </Box>
+        ) : (
+          <Table 
+            getTableProps={tableInstance.getTableProps}
+            getTableBodyProps={tableInstance.getTableBodyProps}
+            headerGroups={tableInstance.headerGroups}
+            page={tableInstance.page}
+            prepareRow={tableInstance.prepareRow}
+            state={tableInstance.state}
+            gotoPage={tableInstance.gotoPage}
+            setPageSize={tableInstance.setPageSize}
+            loading={loading}
+            totalCount={(filteredSections || []).length}
+            pageCount={tableInstance.pageCount}
+          />
         )}
-      </div>
+      </Box>
 
-      {/* Confirm Delete Dialog */}
-      {confirmDelete.open && (
-        <ConfirmDialog
-          title="Delete Section"
-          message="Are you sure you want to delete this section? This action cannot be undone and may affect the website layout."
-          onConfirm={handleDelete}
-          onCancel={() => setConfirmDelete({ open: false, id: null })}
-        />
-      )}
-    </div>
+      {/* <ConfirmDialog
+        open={false || confirmDelete.open}
+        title="Delete Section"
+        content="Are you sure you want to delete this section? This action cannot be undone."
+        onConfirm={handleDelete}
+        onCancel={handleCancelDelete}
+      /> */}
+    </Layout>
   );
 };
 

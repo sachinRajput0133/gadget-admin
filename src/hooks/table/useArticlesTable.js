@@ -1,28 +1,38 @@
-import { useMemo } from 'react';
+import React from 'react';
+import { Box, Typography, Chip } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import moment from 'moment';
-import { Chip } from '@mui/material';
 
-const useArticlesTable = () => {
-  const columns = useMemo(() => [
+const useArticlesTable = ({ onEdit, onDelete, onView }) => {
+  const columns = React.useMemo(() => [
     {
       Header: 'Title',
       accessor: 'title',
-      minWidth: 200,
-      Cell: ({ value, row }) => (
-        <div className="font-medium text-gray-900 truncate max-w-xs">
+      Cell: ({ value }) => (
+        <Typography variant="body1" fontWeight="medium">
           {value}
-        </div>
-      ),
+        </Typography>
+      )
     },
     {
       Header: 'Category',
-      accessor: 'category.name',
-      Cell: ({ value }) => value || 'Uncategorized',
+      accessor: 'category',
+      Cell: ({ value }) => (
+        <Typography variant="body2" color="textSecondary">
+          {value ? value.title : '-'}
+        </Typography>
+      )
     },
     {
       Header: 'Section',
-      accessor: 'section.name',
-      Cell: ({ value }) => value || 'None',
+      accessor: 'section',
+      Cell: ({ value }) => (
+        <Typography variant="body2" color="textSecondary">
+          {value ? value.title : '-'}
+        </Typography>
+      )
     },
     {
       Header: 'Status',
@@ -36,19 +46,47 @@ const useArticlesTable = () => {
           }
           size="small"
         />
-      ),
-    },
-    {
-      Header: 'Published',
-      accessor: 'publishedAt',
-      Cell: ({ value }) => value ? moment(value).format('MMM D, YYYY') : 'Not published',
+      )
     },
     {
       Header: 'Last Updated',
       accessor: 'updatedAt',
-      Cell: ({ value }) => moment(value).format('MMM D, YYYY'),
-    }
-  ], []);
+      Cell: ({ value }) => (
+        <Typography variant="body2" color="textSecondary">
+          {moment(value).format('MMM D, YYYY')}
+        </Typography>
+      )
+    },
+    {
+      Header: 'Actions',
+      accessor: 'slug',
+      Cell: ({ value, row }) => (
+        <Box display="flex" justifyContent="flex-end" gap={1}>
+          <button
+            onClick={() => onView(value)}
+            className="icon-button text-green-600 hover:text-green-900"
+            title="View"
+          >
+            <VisibilityIcon className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => onEdit(value)}
+            className="icon-button text-blue-600 hover:text-blue-900"
+            title="Edit"
+          >
+            <EditIcon className="h-5 w-5" />
+          </button>
+          <button
+            onClick={() => onDelete(value)}
+            className="icon-button text-red-600 hover:text-red-900"
+            title="Delete"
+          >
+            <DeleteIcon className="h-5 w-5" />
+          </button>
+        </Box>
+      )
+    },
+  ], [onEdit, onDelete, onView]);
 
   return { columns };
 };

@@ -15,6 +15,7 @@ import {
   Delete as DeleteIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
+import useRolesTable from '../../hooks/table/useRolesTable';
 import { useRouter } from 'next/router';
 import Layout from '../../components/layout/Layout';
 import { fetchRoles, deleteRole } from '../../store/slices/roleSlice';
@@ -100,74 +101,12 @@ const RolesPage = () => {
     setRoleToDelete(null);
   };
 
-  const columns = React.useMemo(() => [
-    {
-      Header: 'Name',
-      accessor: 'name',
-      Cell: ({ value }) => (
-        <Typography variant="body1" fontWeight="medium">
-          {value}
-        </Typography>
-      )
-    },
-    {
-      Header: 'Description',
-      accessor: 'description',
-    },
-    {
-      Header: 'Status',
-      accessor: 'isActive',
-      Cell: ({ value, row }) => (
-        <Box>
-          <Chip
-            label={value ? 'Active' : 'Inactive'}
-            color={value ? 'success' : 'error'}
-            size="small"
-          />
-          {row.original.isDefault && (
-            <Chip
-              label="Default"
-              color="primary"
-              size="small"
-              sx={{ ml: 1 }}
-            />
-          )}
-        </Box>
-      )
-    },
-    {
-      Header: 'Permissions',
-      accessor: 'permissions',
-      Cell: ({ value }) => `${value ? value.length : 0} permissions`
-    },
-    {
-      Header: 'Actions',
-      accessor: '_id',
-      Cell: ({ value, row }) => (
-        <Box>
-          <IconButton
-            color="primary"
-            onClick={() => handleEditRole(value)}
-            title="Edit role"
-            size="small"
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            color="error"
-            onClick={() => handleDeleteClick(row.original)}
-            title="Delete role"
-            disabled={row.original.isDefault}
-            size="small"
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
-        </Box>
-      )
-    },
-  ], []);
+  const { columns } = useRolesTable({
+    onEdit: handleEditRole,
+    onDelete: handleDeleteClick
+  });
 
-  const tableInstance = useReactTable(columns, filteredRoles);
+  const { tableInstance } = useReactTable(columns, filteredRoles ?? []);
 
   return (
     <Layout title="Roles Management">
@@ -204,10 +143,18 @@ const RolesPage = () => {
         </Box>
 
         <Table 
-          {...tableInstance}
-          loading={loading}
-          totalCount={filteredRoles.length} 
-        />
+            getTableProps={tableInstance.getTableProps}
+            getTableBodyProps={tableInstance.getTableBodyProps}
+            headerGroups={tableInstance.headerGroups}
+            page={tableInstance.page}
+            prepareRow={tableInstance.prepareRow}
+            state={tableInstance.state}
+            gotoPage={tableInstance.gotoPage}
+            setPageSize={tableInstance.setPageSize}
+            loading={loading}
+            totalCount={(filteredRoles || []).length}
+            pageCount={tableInstance.pageCount}
+          />
       </Box>
 
       {/* <ConfirmDialog

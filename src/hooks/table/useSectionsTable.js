@@ -3,7 +3,7 @@ import { Box, Typography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 
-const useCategoriesTable = ({ onEdit, onDelete }) => {
+const useSectionsTable = ({ onEdit, onDelete }) => {
   const columns = React.useMemo(() => [
     {
       Header: 'Title',
@@ -24,8 +24,8 @@ const useCategoriesTable = ({ onEdit, onDelete }) => {
       )
     },
     {
-      Header: 'Parent',
-      accessor: 'parent',
+      Header: 'Category',
+      accessor: 'category',
       Cell: ({ value }) => (
         <Typography variant="body2" color="textSecondary">
           {value ? value.title : '-'}
@@ -59,4 +59,4 @@ const useCategoriesTable = ({ onEdit, onDelete }) => {
   return { columns };
 };
 
-export default useCategoriesTable;
+export default useSectionsTable;
