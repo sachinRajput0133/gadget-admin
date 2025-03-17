@@ -51,16 +51,21 @@ const Layout = ({ children }) => {
       <Sidebar />
 
       {/* Main content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${
+      {/* <div className={`flex-1 flex flex-col transition-all duration-300 ${
         sidebarOpen ? 'ml-64' : 'ml-20'
+      }`}> */}
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${
+        sidebarOpen ? 'ml-32' : ''
       }`}>
         {/* Header */}
-        <Header />
+        {/* <div>
+          <Header />
+        </div> */}
 
         {/* Page content */}
-        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
-          <div className="container mx-auto">
-            <div className="bg-white rounded-lg shadow-sm p-6">
+        <main className="flex-1  mt-10 bg-gray-50 border   w-full">
+          <div className=" mx-auto">
+            <div className="bg-white rounded-lg shadow-sm p-6 ">
               {children}
             </div>
           </div>

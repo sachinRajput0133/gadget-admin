@@ -2,6 +2,7 @@ import React from 'react';
 import { useRouter } from 'next/router';
 import { useDispatch, useSelector } from 'react-redux';
 import { toggleSidebar } from '../../store/slices/uiSlice';
+import { logout } from '../../store/slices/authSlice';
 
 // Icons
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -12,12 +13,18 @@ import PeopleIcon from '@mui/icons-material/People';
 import SettingsIcon from '@mui/icons-material/Settings';
 import MenuOpenIcon from '@mui/icons-material/MenuOpen';
 import SecurityIcon from '@mui/icons-material/Security';
+import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 import CustomLink from '../../widget/customLink';
 
 const Sidebar = () => {
   const router = useRouter();
   const dispatch = useDispatch();
   const { sidebarOpen } = useSelector((state) => state.ui);
+
+  const handleLogout = async () => {
+    await dispatch(logout());
+    router.push('/login');
+  };
 
   // Define sidebar items
   const sidebarItems = [
@@ -108,6 +115,19 @@ const Sidebar = () => {
             })}
           </ul>
         </nav>
+
+        {/* Logout Button at Bottom */}
+        <div className="mt-auto border-t border-blue-800/30">
+          <button
+            onClick={handleLogout}
+            className={`flex items-center w-full px-4 py-3 text-blue-100/80 hover:bg-white/10 hover:text-white transition-colors ${
+              sidebarOpen ? 'justify-start space-x-3' : 'justify-center'
+            }`}
+          >
+            <ExitToAppIcon className="w-5 h-5" />
+            {sidebarOpen && <span>Logout</span>}
+          </button>
+        </div>
 
         {/* Sidebar Footer */}
         <div className="py-4 px-4 border-t border-blue-800/50">

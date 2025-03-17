@@ -1,46 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Box,
-  Typography,
-  TextField,
-  Button,
-  FormControlLabel,
-  Switch,
-  CircularProgress,
-  Divider,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Checkbox,
-  FormControl,
-  FormLabel,
-  FormGroup,
-  FormHelperText,
-  Grid
-} from '@mui/material';
-import { ExpandMore as ExpandMoreIcon } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
 import { toast } from 'react-toastify';
 import FormDrawer from '../common/Drawer/FormDrawer';
-import { 
-  createRole, 
-  updateRole, 
-  updateRolePermissions, 
-  fetchPermissionsByModule 
-} from '../../store/slices/roleSlice';
+import { createSection, updateSection } from '../../store/slices/sectionsSlice';
 
-const RoleFormDrawer = ({ 
+// Dynamically import ReactQuill with SSR disabled
+const ReactQuill = dynamic(() => import('react-quill'), {
+  ssr: false,
+  loading: () => <div className="h-52 w-full bg-gray-100 animate-pulse rounded"></div>,
+});
+
+const SectionFormDrawer = ({ 
   open, 
   onClose, 
-  roleToEdit = null, 
+  sectionToEdit = null, 
   onSuccess 
 }) => {
   const dispatch = useDispatch();
-  const { permissionsByModule, loading } = useSelector((state) => state.roles);
+  const { loading } = useSelector((state) => state.sections);
   
   // Set up react-hook-form with native validation
   const { 
+    register, 
     control, 
     handleSubmit, 
     reset, 
@@ -48,291 +32,245 @@ const RoleFormDrawer = ({
   } = useForm({
     mode: 'onChange',
     defaultValues: {
-      name: '',
+      title: '',
       description: '',
+      slug: '',
+      order: 0,
       isActive: true,
-      isDefault: false
+      metaTitle: '',
+      metaDescription: ''
     }
   });
   
-  const [selectedPermissions, setSelectedPermissions] = useState({});
   const [submitting, setSubmitting] = useState(false);
 
-  // Load permissions grouped by module
+  // Reset form with section data when editing
   useEffect(() => {
-    if (open) {
-      dispatch(fetchPermissionsByModule());
-    }
-  }, [dispatch, open]);
-  
-  // Reset form with role data when editing
-  useEffect(() => {
-    if (roleToEdit) {
+    if (sectionToEdit) {
       reset({
-        name: roleToEdit.name || '',
-        description: roleToEdit.description || '',
-        isActive: roleToEdit.isActive !== undefined ? roleToEdit.isActive : true,
-        isDefault: roleToEdit.isDefault || false
+        title: sectionToEdit.title || '',
+        description: sectionToEdit.description || '',
+        slug: sectionToEdit.slug || '',
+        order: sectionToEdit.order || 0,
+        isActive: sectionToEdit.isActive !== undefined ? sectionToEdit.isActive : true,
+        metaTitle: sectionToEdit.metaTitle || '',
+        metaDescription: sectionToEdit.metaDescription || ''
       });
-      
-      // Set selected permissions from the role
-      const permissionMap = {};
-      if (roleToEdit.permissions && Array.isArray(roleToEdit.permissions)) {
-        roleToEdit.permissions.forEach(permission => {
-          permissionMap[permission._id] = true;
-        });
-      }
-      setSelectedPermissions(permissionMap);
     } else {
       reset({
-        name: '',
+        title: '',
         description: '',
+        slug: '',
+        order: 0,
         isActive: true,
-        isDefault: false
+        metaTitle: '',
+        metaDescription: ''
       });
-      setSelectedPermissions({});
     }
-  }, [roleToEdit, reset]);
-  
-  const handlePermissionChange = (permissionId) => {
-    setSelectedPermissions(prev => ({
-      ...prev,
-      [permissionId]: !prev[permissionId]
-    }));
-  };
-  
-  const handleSelectAllModulePermissions = (modulePermissions, isSelected) => {
-    const updatedPermissions = { ...selectedPermissions };
-    
-    // For each permission in the module, update its selection state
-    modulePermissions.forEach(permission => {
-      updatedPermissions[permission._id] = isSelected;
-    });
-    
-    setSelectedPermissions(updatedPermissions);
-  };
-  
-  // Check if all permissions in a module are selected
-  const areAllModulePermissionsSelected = (modulePermissions) => {
-    return modulePermissions.every(permission => selectedPermissions[permission._id]);
-  };
-  
-  // Check if any permissions in a module are selected
-  const areAnyModulePermissionsSelected = (modulePermissions) => {
-    return modulePermissions.some(permission => selectedPermissions[permission._id]);
-  };
+  }, [sectionToEdit, reset]);
   
   const onSubmit = async (data) => {
+    setSubmitting(true);
     try {
-      setSubmitting(true);
-      
-      // Get all selected permission IDs
-      const permissionIds = Object.keys(selectedPermissions).filter(
-        id => selectedPermissions[id]
-      );
-      
-      if (roleToEdit) {
-        // Update existing role
-        await dispatch(updateRole({
-          id: roleToEdit._id,
-          roleData: data
-        })).unwrap();
+      if (sectionToEdit) {
+        // Update existing section
+        const resultAction = await dispatch(updateSection({ 
+          id: sectionToEdit._id, 
+          sectionData: data 
+        }));
         
-        // Update role permissions
-        await dispatch(updateRolePermissions({
-          roleId: roleToEdit._id,
-          permissions: permissionIds
-        })).unwrap();
-        
-        toast.success('Role updated successfully');
+        if (updateSection.fulfilled.match(resultAction)) {
+          toast.success('Section updated successfully');
+          if (onSuccess) onSuccess(resultAction.payload);
+          onClose();
+        } else {
+          toast.error(resultAction.payload || 'Failed to update section');
+        }
       } else {
-        // Create new role
-        const result = await dispatch(createRole({
-          ...data,
-          permissions: permissionIds
-        })).unwrap();
+        // Create new section
+        const resultAction = await dispatch(createSection(data));
         
-        toast.success('Role created successfully');
+        if (createSection.fulfilled.match(resultAction)) {
+          toast.success('Section created successfully');
+          if (onSuccess) onSuccess(resultAction.payload);
+          onClose();
+        } else {
+          toast.error(resultAction.payload || 'Failed to create section');
+        }
       }
-      
-      if (onSuccess) onSuccess();
-      onClose();
     } catch (error) {
-      toast.error(error.message || 'Failed to save role');
+      toast.error('An error occurred');
+      console.error(error);
     } finally {
       setSubmitting(false);
     }
   };
-  
-  const title = roleToEdit ? 'Edit Role' : 'Create Role';
-  
+
   return (
-    <FormDrawer 
-      open={open} 
-      onClose={onClose} 
-      title={title}
-      width={700}
+    <FormDrawer
+      open={open}
+      onClose={onClose}
+      title={sectionToEdit ? 'Edit Section' : 'Create Section'}
+      width={600}
     >
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Grid container spacing={3}>
-          <Grid item xs={12}>
-            <Controller
-              name="name"
-              control={control}
-              rules={{ required: 'Role name is required' }}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Role Name"
-                  error={!!errors.name}
-                  helperText={errors.name?.message}
-                  disabled={roleToEdit && roleToEdit.isDefault}
-                />
-              )}
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-4">
+        <div>
+          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+            Title *
+          </label>
+          <input
+            id="title"
+            type="text"
+            className={`block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${
+              errors.title ? 'border-red-500' : ''
+            }`}
+            {...register('title', { required: 'Title is required' })}
+          />
+          {errors.title && (
+            <p className="mt-1 text-sm text-red-600">{errors.title.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="slug" className="block text-sm font-medium text-gray-700 mb-1">
+            Slug
+          </label>
+          <input
+            id="slug"
+            type="text"
+            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            {...register('slug')}
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Leave empty to auto-generate from title. Use only lowercase letters, numbers, and hyphens.
+          </p>
+        </div>
+
+        <div>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+            Description *
+          </label>
+          <Controller
+            name="description"
+            control={control}
+            rules={{ required: 'Description is required' }}
+            render={({ field }) => (
+              <ReactQuill
+                theme="snow"
+                value={field.value || ''}
+                onChange={field.onChange}
+                className={`bg-white ${errors.description ? 'border-red-500' : ''}`}
+                modules={{
+                  toolbar: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    ['link'],
+                    ['clean']
+                  ],
+                }}
+              />
+            )}
+          />
+          {errors.description && (
+            <p className="mt-1 text-sm text-red-600">{errors.description.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="order" className="block text-sm font-medium text-gray-700 mb-1">
+            Display Order
+          </label>
+          <input
+            id="order"
+            type="number"
+            className="block w-24 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+            {...register('order', { valueAsNumber: true })}
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            Controls the display order of sections. Lower numbers are displayed first.
+          </p>
+        </div>
+
+        <div className="flex items-start">
+          <div className="flex items-center h-5">
+            <input
+              id="isActive"
+              type="checkbox"
+              className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              {...register('isActive')}
             />
-          </Grid>
+          </div>
+          <div className="ml-3 text-sm">
+            <label htmlFor="isActive" className="font-medium text-gray-700">Active</label>
+            <p className="text-gray-500">If unchecked, this section will not be displayed on the frontend.</p>
+          </div>
+        </div>
+
+        {/* <div className="border-t border-gray-200 pt-4">
+          <h3 className="text-lg font-medium text-gray-900 mb-3">SEO Settings</h3>
           
-          <Grid item xs={12}>
-            <Controller
-              name="description"
-              control={control}
-              render={({ field }) => (
-                <TextField
-                  {...field}
-                  fullWidth
-                  label="Description"
-                  multiline
-                  rows={2}
-                  error={!!errors.description}
-                  helperText={errors.description?.message}
-                />
-              )}
+          <div className="mb-4">
+            <label htmlFor="metaTitle" className="block text-sm font-medium text-gray-700 mb-1">
+              Meta Title
+            </label>
+            <input
+              id="metaTitle"
+              type="text"
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              {...register('metaTitle')}
             />
-          </Grid>
+            <p className="mt-1 text-xs text-gray-500">
+              Leave empty to use the section title.
+            </p>
+          </div>
           
-          <Grid item xs={12} sm={6}>
-            <Controller
-              name="isActive"
-              control={control}
-              render={({ field: { value, onChange } }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={value}
-                      onChange={(e) => onChange(e.target.checked)}
-                    />
-                  }
-                  label="Active"
-                  disabled={roleToEdit && roleToEdit.isDefault}
-                />
-              )}
+          <div>
+            <label htmlFor="metaDescription" className="block text-sm font-medium text-gray-700 mb-1">
+              Meta Description
+            </label>
+            <textarea
+              id="metaDescription"
+              rows={3}
+              className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+              {...register('metaDescription', { maxLength: 250 })}
             />
-          </Grid>
-          
-          <Grid item xs={12} sm={6}>
-            <Controller
-              name="isDefault"
-              control={control}
-              render={({ field: { value, onChange } }) => (
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={value}
-                      onChange={(e) => onChange(e.target.checked)}
-                    />
-                  }
-                  label="Default Role"
-                  disabled={roleToEdit && roleToEdit.isDefault}
-                />
-              )}
-            />
-          </Grid>
-          
-          <Grid item xs={12}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Permissions
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
-            
-            {/* Render permissions grouped by module */}
-            {permissionsByModule && Object.keys(permissionsByModule).map((moduleName) => {
-              const modulePermissions = permissionsByModule[moduleName];
-              const allSelected = areAllModulePermissionsSelected(modulePermissions);
-              const someSelected = areAnyModulePermissionsSelected(modulePermissions);
-              
-              return (
-                <Accordion key={moduleName} sx={{ mb: 1 }}>
-                  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-                    <Box display="flex" alignItems="center" width="100%">
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={allSelected}
-                            indeterminate={someSelected && !allSelected}
-                            onChange={() => handleSelectAllModulePermissions(
-                              modulePermissions, 
-                              !allSelected
-                            )}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        }
-                        label={moduleName}
-                        onClick={(e) => e.stopPropagation()}
-                        sx={{ width: '100%' }}
-                      />
-                    </Box>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <FormControl component="fieldset">
-                      <FormGroup>
-                        {modulePermissions.map((permission) => (
-                          <FormControlLabel
-                            key={permission._id}
-                            control={
-                              <Checkbox
-                                checked={!!selectedPermissions[permission._id]}
-                                onChange={() => handlePermissionChange(permission._id)}
-                              />
-                            }
-                            label={permission.description || permission.action}
-                          />
-                        ))}
-                      </FormGroup>
-                    </FormControl>
-                  </AccordionDetails>
-                </Accordion>
-              );
-            })}
-          </Grid>
-          
-          <Grid item xs={12} sx={{ mt: 2 }}>
-            <Box display="flex" justifyContent="flex-end" gap={2}>
-              <Button 
-                onClick={onClose}
-                variant="outlined"
-              >
-                Cancel
-              </Button>
-              <Button 
-                type="submit"
-                variant="contained"
-                color="primary"
-                disabled={submitting}
-              >
-                {submitting ? (
-                  <>
-                    <CircularProgress size={20} sx={{ mr: 1 }} />
-                    Saving...
-                  </>
-                ) : 'Save Role'}
-              </Button>
-            </Box>
-          </Grid>
-        </Grid>
+            <p className="mt-1 text-xs text-gray-500">
+              Maximum 250 characters. Good for SEO.
+            </p>
+          </div>
+        </div> */}
+
+        <div className="flex justify-end space-x-3 border-t border-gray-200 pt-4">
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={submitting || loading}
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {submitting || loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                {sectionToEdit ? 'Updating...' : 'Creating...'}
+              </>
+            ) : (
+              sectionToEdit ? 'Update Section' : 'Create Section'
+            )}
+          </button>
+        </div>
       </form>
     </FormDrawer>
   );
 };
 
-export default RoleFormDrawer;
+export default SectionFormDrawer;

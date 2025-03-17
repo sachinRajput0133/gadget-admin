@@ -25,9 +25,9 @@ const EditRolePage = () => {
     }
 
     return () => {
-      dispatch(clearSelectedRole());
+      // dispatch(clearSelectedRole());
     };
-  }, [dispatch, id, router]);
+  }, [id]);
 
   if (loading || !selectedRole) {
     return (

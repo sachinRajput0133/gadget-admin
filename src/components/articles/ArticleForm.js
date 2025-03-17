@@ -244,11 +244,9 @@ const ArticleForm = ({
         </div>
       </div>
 
-      {/* SEO Section */}
-      <div className="border-t border-gray-200 pt-6">
+      {/* <div className="border-t border-gray-200 pt-6">
         <h3 className="text-lg font-medium text-gray-900 mb-4">SEO Settings</h3>
         
-        {/* Meta Title */}
         <div className="mb-4">
           <label htmlFor="metaTitle" className="form-label">Meta Title</label>
           <input
@@ -259,7 +257,6 @@ const ArticleForm = ({
           />
         </div>
         
-        {/* Meta Description */}
         <div className="mb-4">
           <label htmlFor="metaDescription" className="form-label">Meta Description</label>
           <textarea
@@ -270,7 +267,6 @@ const ArticleForm = ({
           ></textarea>
         </div>
         
-        {/* Meta Keywords */}
         <div>
           <label htmlFor="metaKeywords" className="form-label">Meta Keywords</label>
           <input
@@ -281,9 +277,8 @@ const ArticleForm = ({
             {...register('metaKeywords')}
           />
         </div>
-      </div>
+      </div> */}
 
-      {/* Form Actions */}
       <div className="flex justify-end space-x-3 border-t border-gray-200 pt-6">
         <button
           type="button"

@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import CONFIG from '../../../config/env';
+import { getAuthHeader } from '../helper';
 
 
 // Async thunks
@@ -27,7 +28,7 @@ export const checkAuth = createAsyncThunk(
       if (!token) return rejectWithValue('No token found');
       
       const response = await axios.get(`${CONFIG.API_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
+        ...getAuthHeader()
       });
       return response.data;
     } catch (error) {

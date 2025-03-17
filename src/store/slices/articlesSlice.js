@@ -48,7 +48,7 @@ export const createArticle = createAsyncThunk(
   async (articleData, { rejectWithValue }) => {
     try {
       const response = await axios.post(
-        `${API_URL}/articles`, 
+        `${CONFIG.API_URL}/articles`, 
         articleData, 
         getAuthHeader()
       );

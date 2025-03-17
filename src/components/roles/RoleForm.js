@@ -46,8 +46,8 @@ const RoleForm = ({ role }) => {
 
   // Load permissions grouped by module
   useEffect(() => {
-    dispatch(fetchPermissionsByModule());
-  }, [dispatch]);
+    // dispatch(fetchPermissionsByModule());
+  }, []);
 
   // Initialize form with role data if editing
   useEffect(() => {

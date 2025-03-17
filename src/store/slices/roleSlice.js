@@ -1,16 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import CONFIG from '../../../config/env';
+import { getAuthHeader } from '../helper';
 
 // Async thunks for roles
 export const fetchRoles = createAsyncThunk(
   'roles/fetchRoles',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${CONFIG.API_URL}/roles`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch(`${CONFIG.API_URL}/roles`, getAuthHeader());
       const data = await response.json();
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to fetch roles');
@@ -26,11 +23,7 @@ export const fetchRole = createAsyncThunk(
   'roles/fetchRole',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${CONFIG.API_URL}/roles/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch(`${CONFIG.API_URL}/roles/${id}`, getAuthHeader());
       const data = await response.json();
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to fetch role');
@@ -48,10 +41,7 @@ export const createRole = createAsyncThunk(
     try {
       const response = await fetch(`${CONFIG.API_URL}/roles`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        ...getAuthHeader(),
         body: JSON.stringify(roleData),
       });
       const data = await response.json();
@@ -71,10 +61,7 @@ export const updateRole = createAsyncThunk(
     try {
       const response = await fetch(`${CONFIG.API_URL}/roles/${id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        ...getAuthHeader(),
         body: JSON.stringify(roleData),
       });
       const data = await response.json();
@@ -94,9 +81,7 @@ export const deleteRole = createAsyncThunk(
     try {
       const response = await fetch(`${CONFIG.API_URL}/roles/${id}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        ...getAuthHeader(),
       });
       if (!response.ok) {
         const data = await response.json();
@@ -115,10 +100,7 @@ export const updateRolePermissions = createAsyncThunk(
     try {
       const response = await fetch(`${CONFIG.API_URL}/roles/${roleId}/permissions`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
+        ...getAuthHeader(),
         body: JSON.stringify({ permissionIds }),
       });
       const data = await response.json();
@@ -137,11 +119,7 @@ export const fetchPermissions = createAsyncThunk(
   'roles/fetchPermissions',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${CONFIG.API_URL}/permissions`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch(`${CONFIG.API_URL}/permissions`, getAuthHeader());
       const data = await response.json();
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to fetch permissions');
@@ -157,11 +135,7 @@ export const fetchPermissionsByModule = createAsyncThunk(
   'roles/fetchPermissionsByModule',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${CONFIG.API_URL}/permissions/modules`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await fetch(`${CONFIG.API_URL}/permissions/modules`, getAuthHeader());
       const data = await response.json();
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to fetch permissions by module');
