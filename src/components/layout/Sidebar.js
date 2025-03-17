@@ -60,40 +60,48 @@ const Sidebar = () => {
 
   return (
     <aside 
-      className={`bg-white h-screen shadow-md transition-all duration-300 fixed left-0 top-0 z-10 ${
+      className={`fixed inset-y-0 left-0 z-20 flex flex-col transition-all duration-300 bg-gradient-to-b from-blue-900 to-indigo-900 shadow-xl ${
         sidebarOpen ? 'w-64' : 'w-20'
       }`}
     >
       <div className="flex flex-col h-full">
         {/* Sidebar Header */}
-        <div className="py-6 px-4 flex items-center justify-between border-b border-gray-200">
-          {sidebarOpen ? (
-            <h1 className="text-xl font-bold text-primary-600">Admin Panel</h1>
-          ) : (
-            <h1 className="text-xl font-bold text-primary-600">AP</h1>
-          )}
+        <div className="flex items-center justify-between h-16 px-4 border-b border-blue-800/50">
+          <div className="flex items-center">
+            {sidebarOpen ? (
+              <h1 className="text-xl font-bold text-white">Gadget Admin</h1>
+            ) : (
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/10">
+                <h1 className="text-xl font-bold text-white">G</h1>
+              </div>
+            )}
+          </div>
           <button
             onClick={() => dispatch(toggleSidebar())}
-            className="text-gray-500 hover:text-primary-600 transition-colors"
+            className="flex items-center justify-center w-8 h-8 text-white/70 hover:text-white hover:bg-white/10 rounded-md transition-colors"
           >
             <MenuOpenIcon className={`transform ${sidebarOpen ? '' : 'rotate-180'}`} />
           </button>
         </div>
 
         {/* Sidebar Menu Items */}
-        <nav className="flex-1 py-6 px-2 overflow-y-auto">
-          <ul className="space-y-2">
+        <nav className="flex-1 py-6 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-700 scrollbar-track-transparent">
+          <ul className="px-3 space-y-1">
             {sidebarItems.map((item) => {
               const isActive = router.pathname.startsWith(item.path);
               return (
                 <li key={item.name}>
                   <CustomLink href={item.path}>
-                    {/* <a
-                      className={`sidebar-link ${isActive ? 'active' : ''}`}
-                    > */}
-                      <span className="mr-3">{item.icon}</span>
-                      {sidebarOpen && <span>{item.name}</span>}
-                    {/* </a> */}
+                    <div
+                      className={`flex items-center px-3 py-3 rounded-lg transition-all duration-200 ${
+                        isActive 
+                          ? 'bg-white/15 text-white' 
+                          : 'text-blue-100/80 hover:bg-white/10 hover:text-white'
+                      }`}
+                    >
+                      <span className={`${sidebarOpen ? 'mr-3' : 'mx-auto'}`}>{item.icon}</span>
+                      {sidebarOpen && <span className="font-medium">{item.name}</span>}
+                    </div>
                   </CustomLink>
                 </li>
               );
@@ -102,9 +110,9 @@ const Sidebar = () => {
         </nav>
 
         {/* Sidebar Footer */}
-        <div className="py-4 px-4 border-t border-gray-200">
+        <div className="py-4 px-4 border-t border-blue-800/50">
           {sidebarOpen && (
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-blue-200/70">
               &copy; {new Date().getFullYear()} Gadget Reviews
             </p>
           )}

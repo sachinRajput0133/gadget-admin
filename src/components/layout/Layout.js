@@ -46,21 +46,34 @@ const Layout = ({ children }) => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
       {/* Sidebar */}
       <Sidebar />
 
       {/* Main content */}
-      <div className={`transition-all duration-300 ${
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${
         sidebarOpen ? 'ml-64' : 'ml-20'
       }`}>
         {/* Header */}
         <Header />
 
         {/* Page content */}
-        <main className="pt-24 pb-8 px-6">
-          {children}
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          <div className="container mx-auto">
+            <div className="bg-white rounded-lg shadow-sm p-6">
+              {children}
+            </div>
+          </div>
         </main>
+        
+        {/* Footer */}
+        <footer className="bg-white py-4 px-6 border-t border-gray-200">
+          <div className="container mx-auto">
+            <p className="text-sm text-gray-500 text-center">
+              &copy; {new Date().getFullYear()} Gadget Reviews Admin Panel. All rights reserved.
+            </p>
+          </div>
+        </footer>
       </div>
 
       {/* Toast notifications */}
