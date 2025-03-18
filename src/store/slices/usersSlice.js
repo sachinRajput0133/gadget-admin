@@ -1,16 +1,13 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import CONFIG from '../../../config/env';
+import commonApi from '@api/common';
 
 // Async thunks for users
 export const fetchUsers = createAsyncThunk(
   'users/fetchUsers',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${CONFIG.API_URL}/users`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await commonApi({action:'getUsers', data: {}});
       const data = await response.json();
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to fetch users');
@@ -26,11 +23,7 @@ export const fetchUser = createAsyncThunk(
   'users/fetchUser',
   async (id, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${CONFIG.API_URL}/users/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`,
-        },
-      });
+      const response = await commonApi({action:'getUser', data: {id}});
       const data = await response.json();
       if (!response.ok) {
         return rejectWithValue(data.message || 'Failed to fetch user');

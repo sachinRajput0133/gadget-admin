@@ -39,7 +39,7 @@ const useArticlesTable = ({ onEdit, onDelete, onView }) => {
       accessor: 'status',
       Cell: ({ value }) => (
         <Chip
-          label={value.charAt(0).toUpperCase() + value.slice(1)}
+          // label={value.charAt(0).toUpperCase() + value.slice(1)}
           color={
             value === 'published' ? 'success' :
             value === 'draft' ? 'default' : 'warning'
@@ -59,7 +59,7 @@ const useArticlesTable = ({ onEdit, onDelete, onView }) => {
     },
     {
       Header: 'Actions',
-      accessor: 'slug',
+      accessor: 'id',
       Cell: ({ value, row }) => (
         <Box display="flex" justifyContent="flex-end" gap={1}>
           <button

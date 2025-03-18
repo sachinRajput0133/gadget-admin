@@ -19,7 +19,7 @@ const useDashboardTable = ({ onView }) => {
       accessor: 'type',
       Cell: ({ value }) => (
         <Chip
-          label={value.charAt(0).toUpperCase() + value.slice(1)}
+          // label={value.charAt(0).toUpperCase() + value.slice(1)}
           color={
             value === 'article' ? 'primary' :
             value === 'review' ? 'success' : 'default'

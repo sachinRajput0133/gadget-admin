@@ -69,6 +69,7 @@ const Articles = () => {
   };
 
   const handleEditArticle = (slug) => {
+    console.log("🚀 ~ handleEditArticle ~ slug:", slug)
     router.push(`/articles/edit/${slug}`);
   };
 

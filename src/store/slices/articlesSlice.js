@@ -1,30 +1,35 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import axios from 'axios';
-import Cookies from 'js-cookie';
 import CONFIG from '../../../config/env';
-
+import { getCookie } from 'cookies-next';
+import {KEYS} from '../../../utils/constant';
+import commonApi from '../../../api/common';
 
 // Helper function to set auth header
 const getAuthHeader = () => {
-  const token = Cookies.get('token');
+  const token = getCookie(KEYS.TOKEN) || userToken;
   return {
-    headers: { Authorization: `Bearer ${token}` }
+    headers: { Authorization: `jwt ${token}` }
   };
 };
 
 // Async thunks
 export const fetchArticles = createAsyncThunk(
   'articles/fetchArticles',
-  async (params = {}, { rejectWithValue }) => {
+  async (data = {}, { rejectWithValue }) => {
     try {
-      const { page = 1, limit = 10, search = '', status = '' } = params;
-      let url = `${CONFIG.API_URL}/articles?page=${page}&limit=${limit}`;
-      
-      if (search) url += `&search=${search}`;
-      if (status) url += `&status=${status}`;
-      
-      const response = await axios.get(url);
+      const response = await commonApi({
+        action: 'getArticles',
+        data,
+      });
       return response.data;
+      // const { page = 1, limit = 10, search = '', status = '' } = params;
+      // let url = `${CONFIG.API_URL}/articles?page=${page}&limit=${limit}`;
+      
+      // if (search) url += `&search=${search}`;
+      // if (status) url += `&status=${status}`;
+      
+      // const response = await axios.get(url, getAuthHeader());
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch articles');
     }
@@ -35,7 +40,7 @@ export const fetchArticleById = createAsyncThunk(
   'articles/fetchArticleById',
   async (slug, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`${CONFIG.API_URL}/articles/${slug}`);
+      const response = await axios.get(`${CONFIG.API_URL}/articles/${slug}`, getAuthHeader());
       return response.data.data;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Failed to fetch article');

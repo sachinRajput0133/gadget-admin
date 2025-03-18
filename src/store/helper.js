@@ -1,11 +1,11 @@
 
-import Cookies from 'js-cookie';
+import { getCookie } from 'cookies-next'; 
 const getAuthHeader = () => {
-    const token = Cookies.get('token');
+    const token = getCookie('token');
     return {
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { Authorization: `jwt ${token}` }
     };
-  };
+};
 export{
     getAuthHeader
 }  

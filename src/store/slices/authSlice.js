@@ -1,18 +1,48 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import axios from 'axios';
-import Cookies from 'js-cookie';
-import CONFIG from '../../../config/env';
-import { getAuthHeader } from '../helper';
+import routes from '../../../utils/routes';
+import router from 'next/router';
+import { setCookie, getCookie } from 'cookies-next';
+import {KEYS} from '../../../utils/constant';
+import commonApi from '../../../api/common';
+
+const storeSessionData = async (data = {}) => {
+  const token = data.token;
+
+  // Store session data in Iron Session
+  await fetch('/admin/api/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: token,
+      user: {
+        email: data.email,
+        roles: data.roles,
+        name: data.name,
+        // compNm: data.compNm,
+        // phone: `+${data.countryCode}-${data.mobNo}`,
+      },
+    }),
+  });
+
+  // Redirect to dashboard
+  router.push(routes.dashboard);
+};
 
 
-// Async thunks
 export const login = createAsyncThunk(
   'auth/login',
   async ({ email, password }, { rejectWithValue }) => {
     try {
-      console.log("loginnn")
-      const response = await axios.post(`${CONFIG.API_URL}/auth/login`, { email, password });
-      Cookies.set('token', response.data.token, { expires: 7 });
+      console.log("loginnnn")
+      const response = await commonApi({
+        action: 'signInUser',
+        data: { email, password },
+      });
+      console.log("🚀 ~ response:", response)
+      const data = response.data;
+      setCookie(KEYS.TOKEN, data.token);
+      // setCookie(KEYS.EXPIRES, Math.floor(Date.now() / 1000) + response?.data?.expires);
+      storeSessionData(data);
       return response.data;
     } catch (error) {
       return rejectWithValue(error.response.data.message || 'Login failed');
@@ -24,15 +54,14 @@ export const checkAuth = createAsyncThunk(
   'auth/checkAuth',
   async (_, { rejectWithValue }) => {
     try {
-      const token = Cookies.get('token');
+      const token = getCookie(KEYS.TOKEN);
       if (!token) return rejectWithValue('No token found');
-      
-      const response = await axios.get(`${CONFIG.API_URL}/auth/me`, {
-        ...getAuthHeader()
+      const response = await commonApi({
+        action: 'profile',
       });
       return response.data;
     } catch (error) {
-      Cookies.remove('token');
+      setCookie(KEYS.TOKEN, null);
       return rejectWithValue(error.response?.data?.message || 'Authentication failed');
     }
   }
@@ -42,7 +71,7 @@ export const logout = createAsyncThunk(
   'auth/logout',
   async (_, { rejectWithValue }) => {
     try {
-      Cookies.remove('token');
+      setCookie(KEYS.TOKEN, null);
       return true;
     } catch (error) {
       return rejectWithValue(error.response?.data?.message || 'Logout failed');
@@ -52,7 +81,7 @@ export const logout = createAsyncThunk(
 
 const initialState = {
   user: null,
-  token: typeof window !== 'undefined' ? Cookies.get('token') : null,
+  token: typeof window !== 'undefined' ? getCookie(KEYS.TOKEN) : null,
   isAuthenticated: false,
   loading: false,
   error: null,
