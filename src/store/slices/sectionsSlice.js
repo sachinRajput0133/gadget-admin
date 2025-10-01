@@ -18,7 +18,7 @@ export const fetchSections = createAsyncThunk(
     try {
       const { page = 1, limit = 10, search = '' } = params;
       let url = `${CONFIG.API_URL}/sections?page=${page}&limit=${limit}`;
-      
+      console.log("ur>>>>",url);
       if (search) url += `&search=${search}`;
       
       const response = await axios.get(url);
@@ -45,6 +45,7 @@ export const createSection = createAsyncThunk(
   'sections/createSection',
   async (sectionData, { rejectWithValue }) => {
     try {
+      console.log("`${CONFIG.API_URL}/sections`",`${CONFIG.API_URL}/sections`);
       const response = await axios.post(
         `${CONFIG.API_URL}/sections`, 
         sectionData, 
